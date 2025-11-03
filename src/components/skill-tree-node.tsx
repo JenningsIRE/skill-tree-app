@@ -1,4 +1,6 @@
 import {
+  getIncomers,
+  getOutgoers,
   Handle,
   Position,
   useReactFlow,
@@ -28,44 +30,29 @@ import { useShallow } from "zustand/shallow";
 const selector = (state: RFState) => ({
   editNode: state.editNode,
   skillPointsAvailable: state.skillPointsAvailable,
-  skillPointsSpent: state.skillPointsSpent,
   nodes: state.nodes,
+  edges: state.edges,
 });
 
-const areSomeConnectionsUnlocked = (
-  connections: Array<{ source: string; target: string }>,
-  nodes: Node[],
-  type: "source" | "target",
-  checkForLocked = false
-) => {
-  if (connections.length === 0) {
-    return false;
-  }
-  return connections.some((connection) => {
-    const node = nodes.find((n) => n.id === connection[type]);
-    const value = node?.data.unlocked;
-    return checkForLocked ? !value : !!value;
-  });
-};
-
 export function SkillTreeNode({ id, data }: NodeProps<Node<NodeData>>) {
-  const { getNodeConnections, deleteElements } = useReactFlow();
+  const { deleteElements } = useReactFlow();
 
-  const { editNode, skillPointsAvailable, skillPointsSpent, nodes } = useStore(
+  const { editNode, skillPointsAvailable, nodes, edges } = useStore(
     useShallow(selector)
   );
 
-  const areUpstreamConnectionsLocked = areSomeConnectionsUnlocked(
-    getNodeConnections({ nodeId: id, type: "target" }),
-    nodes,
-    "source",
-    true
+  const areUpstreamConnectionsLocked = getIncomers({ id }, nodes, edges).some(
+    (node) => {
+      return !node.data.unlocked;
+    }
   );
-  const areDownstreamConnectionsUnlocked = areSomeConnectionsUnlocked(
-    getNodeConnections({ nodeId: id, type: "source" }),
+  const areDownstreamConnectionsUnlocked = getOutgoers(
+    { id },
     nodes,
-    "target"
-  );
+    edges
+  ).some((node) => {
+    return !!node.data.unlocked;
+  });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -140,8 +127,7 @@ export function SkillTreeNode({ id, data }: NodeProps<Node<NodeData>>) {
             disabled={
               areUpstreamConnectionsLocked ||
               areDownstreamConnectionsUnlocked ||
-              (!data.unlocked &&
-                skillPointsAvailable - skillPointsSpent - data.cost < 0)
+              (!data.unlocked && skillPointsAvailable - data.cost < 0)
             }
             aria-label="Unlock"
             variant="ghost"

@@ -4,35 +4,14 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { vi, beforeEach, afterEach, describe, it, expect } from "vitest";
 import { Header } from "../header";
 
-/**
- * Mocks
- *
- * The Header component (src/components/header.tsx) imports:
- * - useStore from "../store"
- * - { Button } from "./ui/button"
- * - { EditNodeModal } from "./edit-node-modal"
- *
- * The test file is located at src/components/__tests__/header.test.tsx, so the
- * resolved module paths from the test file are:
- * - ../../store
- * - ../ui/button
- * - ../edit-node-modal
- *
- * We mock those so the Header uses controllable, simple implementations.
- */
-
 let mockState: any;
-
 vi.mock("../../store", () => {
-  // export default useStore(selector) -> call selector(mockState)
   return {
-    default: (selector: any) =>
-      typeof selector === "function" ? selector(mockState) : mockState,
+    default: (selector: any) => selector(mockState),
   };
 });
 
 vi.mock("../ui/button", () => {
-  // Simple Button passthrough to a native button to make testing clicks straightforward
   const Button: React.FC<any> = ({ children, ...props }) => (
     <button {...props}>{children}</button>
   );
@@ -40,7 +19,6 @@ vi.mock("../ui/button", () => {
 });
 
 vi.mock("../edit-node-modal", () => {
-  // Simple modal that exposes a submit button which calls props.onSubmit with sample data
   const EditNodeModal: React.FC<any> = (props: any) => (
     <div data-testid="edit-node-modal">
       <div>{props.title}</div>
@@ -61,30 +39,24 @@ vi.mock("../edit-node-modal", () => {
   return { EditNodeModal };
 });
 
-// Import the component under test after mocks are registered
-
 beforeEach(() => {
   vi.clearAllMocks();
-  // default mock state
   mockState = {
     skillPointsAvailable: 5,
-    skillPointsSpent: 0,
     incSkillPointsAvailable: vi.fn(),
     addNode: vi.fn(),
   };
 });
 
 afterEach(() => {
-  // ensure clean between tests
   vi.clearAllMocks();
 });
 
 describe("Header", () => {
   it("renders computed skill points available", () => {
-    mockState.skillPointsAvailable = 7;
-    mockState.skillPointsSpent = 2;
+    mockState.skillPointsAvailable = 5;
 
-    render(<Header />);
+    render(<Header onSearch={vi.fn()} />);
 
     expect(
       screen.getByText("Skill Points Available: 5", { exact: false })
@@ -96,10 +68,9 @@ describe("Header", () => {
     mockState.incSkillPointsAvailable = inc;
 
     // Case where decrement is enabled
-    mockState.skillPointsAvailable = 3;
-    mockState.skillPointsSpent = 1; // available - spent = 2 > 0
+    mockState.skillPointsAvailable = 2;
 
-    const { rerender } = render(<Header />);
+    const { rerender } = render(<Header onSearch={vi.fn()} />);
 
     const plusBtn = screen.getByText("+");
     const minusBtn = screen.getByText("-");
@@ -112,10 +83,9 @@ describe("Header", () => {
 
     // Now make decrement disabled: available - spent <= 0
     inc.mockClear();
-    mockState.skillPointsAvailable = 1;
-    mockState.skillPointsSpent = 1; // available - spent = 0 -> disable
+    mockState.skillPointsAvailable = 0;
 
-    rerender(<Header />);
+    rerender(<Header onSearch={vi.fn()} />);
 
     const disabledMinus = screen.getByText("-");
     expect(disabledMinus).toBeDisabled();
@@ -129,7 +99,7 @@ describe("Header", () => {
     const addNode = vi.fn();
     mockState.addNode = addNode;
 
-    render(<Header />);
+    render(<Header onSearch={vi.fn()} />);
 
     const addNodeBtn = screen.getByText("Add node");
     fireEvent.click(addNodeBtn);
@@ -140,11 +110,42 @@ describe("Header", () => {
     const submit = screen.getByText("Submit");
     fireEvent.click(submit);
 
-    // Header.handleAddSubmit trims label and description before calling addNode
     expect(addNode).toHaveBeenCalledTimes(1);
     expect(addNode).toHaveBeenCalledWith("New Node", 3, "desc");
-
-    // After submit Header should close the modal
     expect(screen.queryByTestId("edit-node-modal")).toBeNull();
+  });
+
+  it("calls onSearch with current query when Search button is clicked", () => {
+    const onSearch = vi.fn();
+    render(<Header onSearch={onSearch} />);
+
+    const input = screen.getByPlaceholderText(
+      "Search nodes..."
+    ) as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "test" } });
+
+    const searchBtn = screen.getByText("Search");
+    fireEvent.click(searchBtn);
+
+    expect(onSearch).toHaveBeenCalledTimes(1);
+    expect(onSearch).toHaveBeenCalledWith("test");
+  });
+
+  it("submits the form and calls onSearch when Enter is pressed (form submit)", () => {
+    const onSearch = vi.fn();
+    render(<Header onSearch={onSearch} />);
+
+    const input = screen.getByPlaceholderText(
+      "Search nodes..."
+    ) as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "test" } });
+
+    const form = input.closest("form") as HTMLFormElement;
+    expect(form).toBeTruthy();
+
+    fireEvent.submit(form);
+
+    expect(onSearch).toHaveBeenCalledTimes(1);
+    expect(onSearch).toHaveBeenCalledWith("test");
   });
 });

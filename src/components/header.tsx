@@ -7,24 +7,16 @@ import { useShallow } from "zustand/react/shallow";
 
 const selector = (state: RFState) => ({
   skillPointsAvailable: state.skillPointsAvailable,
-  skillPointsSpent: state.skillPointsSpent,
   incSkillPointsAvailable: state.incSkillPointsAvailable,
   onAddNode: state.addNode,
 });
 
-export function Header() {
-  const {
-    skillPointsAvailable,
-    skillPointsSpent,
-    incSkillPointsAvailable,
-    onAddNode,
-  } = useStore(useShallow(selector));
+export function Header({ onSearch }: { onSearch: (query: string) => void }) {
+  const { skillPointsAvailable, incSkillPointsAvailable, onAddNode } = useStore(
+    useShallow(selector)
+  );
   const [query, setQuery] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-
-  const onSearch = (query: string) => {
-    console.log("Searching for:", query);
-  };
 
   const handleSearchSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -50,11 +42,10 @@ export function Header() {
     closeAddModal();
   };
 
-  const isDecDisabled =
-    skillPointsAvailable <= 0 || skillPointsAvailable - skillPointsSpent <= 0;
+  const isDecDisabled = skillPointsAvailable <= 0;
 
   return (
-    <header className="flex items-center gap-4 p-3 px-4  bg-gray-600 sticky top-0 z-30 text-white">
+    <header className="flex items-center gap-4 p-3 px-4 bg-gray-600 sticky top-0 z-30 text-white">
       <div className="flex items-center gap-3">
         <div className="flex flex-col">
           <div className="text-sm font-semibold">Skill Tree App</div>
@@ -65,9 +56,7 @@ export function Header() {
 
       <div className="flex items-center gap-3">
         <div className="flex flex-col">
-          <div className="text-sm ">{`Skill Points Available: ${
-            skillPointsAvailable - skillPointsSpent
-          }`}</div>
+          <div className="text-sm ">{`Skill Points Available: ${skillPointsAvailable}`}</div>
         </div>
       </div>
 

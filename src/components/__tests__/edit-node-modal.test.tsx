@@ -5,7 +5,6 @@ import { EditNodeModal } from "../edit-node-modal";
 
 describe("EditNodeModal", () => {
   beforeEach(() => {
-    // ensure document body is clean for portal mounts
     document.body.innerHTML = "";
   });
 
@@ -72,7 +71,6 @@ describe("EditNodeModal", () => {
     await user.type(costInput, "4");
     await user.type(desc, "  some description  ");
 
-    // now submit
     await user.click(submitBtn);
 
     expect(onSubmit).toHaveBeenCalledTimes(1);
@@ -105,14 +103,12 @@ describe("EditNodeModal", () => {
       "Node title"
     ) as HTMLInputElement;
     await user.type(titleInput, "Name");
-    // cost still 0 -> should remain disabled
     expect(submitBtn).toBeDisabled();
 
     const costInput = screen.getByPlaceholderText(
       "Node cost"
     ) as HTMLInputElement;
     await user.type(costInput, "2");
-    // now both present -> enabled
     expect(submitBtn).toBeEnabled();
   });
 
@@ -132,15 +128,12 @@ describe("EditNodeModal", () => {
     const overlay = dialog.parentElement;
     if (!overlay) throw new Error("Overlay not found");
 
-    // click inside dialog should not close
     fireEvent.mouseDown(dialog);
     expect(closeModal).not.toHaveBeenCalled();
 
-    // click overlay should close
     fireEvent.mouseDown(overlay);
     expect(closeModal).toHaveBeenCalledTimes(1);
 
-    // press Escape should also close
     fireEvent.keyDown(window, { key: "Escape" });
     expect(closeModal).toHaveBeenCalledTimes(2);
   });

@@ -6,6 +6,7 @@ import {
   ReactFlow,
   ReactFlowProvider,
   type OnNodesDelete,
+  useReactFlow,
 } from "@xyflow/react";
 import { useShallow } from "zustand/shallow";
 
@@ -14,7 +15,7 @@ import { SkillTreeNode } from "./components/skill-tree-node";
 
 import "@xyflow/react/dist/style.css";
 
-import { useCallback } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Header } from "./components/header";
 import Toast from "./components/toast";
 
@@ -27,7 +28,7 @@ const selector = (state: RFState) => ({
   onConnect: state.onConnect,
   setEdges: state.setEdges,
   isValidConnection: state.isValidConnection,
-  incSkillPointsSpent: state.incSkillPointsSpent,
+  incSkillPointsAvailable: state.incSkillPointsAvailable,
 });
 
 const nodeTypes = {
@@ -44,21 +45,16 @@ function Flow() {
     onConnect,
     setEdges,
     isValidConnection,
-    incSkillPointsSpent,
+    incSkillPointsAvailable,
   } = useStore(useShallow(selector));
 
-  // don't know if this is better or worse ux
-  // const { fitView } = useReactFlow();
-
-  // useEffect(() => {
-  //   fitView();
-  // }, [nodes.length, edges.length, fitView]);
+  const { getNodeConnections } = useReactFlow();
 
   const onNodesDelete: OnNodesDelete = useCallback(
     (deleted) => {
       let remainingNodes = [...nodes];
-      incSkillPointsSpent(
-        -deleted.reduce((acc, node) => {
+      incSkillPointsAvailable(
+        deleted.reduce((acc, node) => {
           if (node.data.unlocked && typeof node.data.cost === "number") {
             acc += node.data.cost;
           }
@@ -89,17 +85,85 @@ function Flow() {
         }, edges)
       );
     },
-    [nodes, incSkillPointsSpent, setEdges, edges]
+    [nodes, incSkillPointsAvailable, setEdges, edges]
   );
+
+  const [query, setQuery] = useState("");
+
+  // compute matching node ids + reachable path nodes + highlighted edges
+  const { displayNodes, displayEdges } = useMemo(() => {
+    const trimmedQuery = query.trim().toLowerCase();
+    if (!trimmedQuery) {
+      return {
+        displayNodes: nodes,
+        displayEdges: edges,
+      };
+    }
+
+    const matchingIds = new Set<string>();
+    for (const node of nodes) {
+      const label = String(node.data?.label ?? "").toLowerCase();
+      if (label.includes(trimmedQuery)) {
+        matchingIds.add(node.id);
+      }
+    }
+
+    const collected = new Set<string>(matchingIds);
+    const visitQueue = [...matchingIds];
+
+    // traverse outward in each direction from found nodes
+    while (visitQueue.length) {
+      const currentId = visitQueue.shift()!;
+      const connections = getNodeConnections({ nodeId: currentId });
+
+      for (const edge of connections) {
+        const neighborId =
+          edge.source === currentId ? edge.target : edge.source;
+        if (!collected.has(neighborId)) {
+          collected.add(neighborId);
+          visitQueue.push(neighborId);
+        }
+      }
+    }
+
+    const displayNodes = nodes.map((node) => {
+      if (matchingIds.has(node.id)) {
+        return {
+          ...node,
+          className: (node.className ?? "") + " ring-2 ring-blue-400",
+        };
+      }
+      if (!collected.has(node.id)) {
+        return {
+          ...node,
+          className: (node.className ?? "") + " opacity-30",
+        };
+      }
+      return {
+        ...node,
+        className: (node.className ?? "") + " opacity-85",
+      };
+    });
+
+    const displayEdges = edges.map((edge) => {
+      const highlighted = collected.has(edge.source);
+      return {
+        ...edge,
+        animated: highlighted,
+      };
+    });
+
+    return { displayNodes, displayEdges };
+  }, [query, nodes, edges, getNodeConnections]);
 
   return (
     <>
-      <Header />
+      <Header onSearch={setQuery} />
       {errorText && <Toast text={errorText} />}
       <div className="fixed top-16 left-0 right-0 bottom-0 overflow-hidden">
         <ReactFlow
-          nodes={nodes}
-          edges={edges}
+          nodes={displayNodes}
+          edges={displayEdges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onNodesDelete={onNodesDelete}

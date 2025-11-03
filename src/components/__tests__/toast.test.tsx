@@ -13,16 +13,12 @@ describe("Toast component", () => {
     const alert = screen.getByRole("alert");
     expect(alert).toBeInTheDocument();
     expect(alert).toHaveAttribute("aria-live", "assertive");
-    expect(alert).toHaveAttribute("aria-atomic", "true");
 
-    // container should reflect visible state
     expect(alert.className).toContain("opacity-100");
     expect(alert.className).toContain("pointer-events-auto");
 
-    // the message text should be visible
     expect(screen.getByText("Something went wrong")).toBeInTheDocument();
 
-    // close button exists
     expect(screen.getByLabelText("Close error")).toBeInTheDocument();
   });
 
@@ -31,12 +27,10 @@ describe("Toast component", () => {
     const alert = screen.getByRole("alert");
     const closeBtn = screen.getByLabelText("Close error");
 
-    // initial visible
     expect(alert.className).toContain("opacity-100");
 
     fireEvent.click(closeBtn);
 
-    // after clicking, the component remains mounted but has hidden classes
     const updated = screen.getByRole("alert");
     expect(updated.className).toContain("opacity-0");
     expect(updated.className).toContain("pointer-events-none");
@@ -44,10 +38,8 @@ describe("Toast component", () => {
 
   it("unmounts when text prop becomes empty", () => {
     const { rerender, queryByRole } = render(<Toast text="Temp error" />);
-    // initially present
     expect(queryByRole("alert")).not.toBeNull();
 
-    // update prop to empty -> component should unmount
     rerender(<Toast text="" />);
     expect(queryByRole("alert")).toBeNull();
   });

@@ -1,4 +1,6 @@
+import { TriangleAlert } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Button } from "./ui/button";
 
 export interface ToastProps {
   text: string;
@@ -22,7 +24,7 @@ export default function Toast({ text }: ToastProps) {
   ].join(" ");
 
   const toastClass =
-    "bg-red-800 text-white px-4 py-3 rounded-lg shadow-lg min-w-[200px] max-w-[min(90vw,420px)] flex items-center gap-3 text-sm";
+    "bg-red-800 text-white px-3 py-1 rounded-lg shadow-lg min-w-[200px] max-w-[min(90vw,420px)] flex items-center gap-3 text-sm";
 
   const closeButtonClass =
     "bg-transparent border-0 text-white opacity-90 cursor-pointer text-lg p-1 leading-none";
@@ -32,44 +34,17 @@ export default function Toast({ text }: ToastProps) {
   };
 
   return (
-    <div
-      className={containerClass}
-      aria-live="assertive"
-      role="alert"
-      aria-atomic="true"
-    >
+    <div className={containerClass} aria-live="assertive" role="alert">
       <div className={toastClass}>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-          <path
-            d="M12 9v4"
-            stroke="white"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M12 17h.01"
-            stroke="white"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
-            stroke="transparent"
-            fill="rgba(255,255,255,0.08)"
-          />
-        </svg>
-
+        <TriangleAlert />
         <div className="flex-1 leading-5">{text}</div>
-
-        <button
+        <Button
           onClick={handleClose}
           aria-label="Close error"
           className={closeButtonClass}
         >
           ×
-        </button>
+        </Button>
       </div>
     </div>
   );
