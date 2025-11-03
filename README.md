@@ -17,6 +17,6 @@ The app is built using vite and written in React and Typescript so that should t
 
 ## AI Disclosure
 
-Co-pilot was used to create a base for simple components (e.g. toast, modal, header), common algorithms (e.g. node tree traversal) and tests. These were all the customised to fit the specific requirements of the project. ChatGPT was also used for some general questions but very little was directly copied from there except for maybe some css.
+Co-pilot was used to seed simple components (e.g. toast, modal, header), common algorithms (e.g. node tree traversal) and tests. These were all the customised to fit the specific requirements of the project. ChatGPT was also used for some general questions but very little was directly copied from there except for maybe some css.
 
 \* The React Flow docs and examples were also used extensively and components were taken from shadcn and Lucide.
