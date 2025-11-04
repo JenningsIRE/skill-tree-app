@@ -44,12 +44,12 @@ vi.mock("@xyflow/react", () => {
       .map((e) => nodes.find((n) => n.id === e.target))
       .filter(Boolean);
 
-  const useReactFlow = () => ({
+  const useReactFlow = vi.fn(() => ({
     getNodeConnections: vi.fn().mockReturnValue([]),
     deleteElements: vi.fn(),
     fitView: vi.fn(),
     getNode: vi.fn(),
-  });
+  }));
 
   const ReactFlow: React.FC<any> = vi.fn((props) =>
     ReactLocal.createElement(
